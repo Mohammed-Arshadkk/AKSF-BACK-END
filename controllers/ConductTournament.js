@@ -1,4 +1,4 @@
-const Tournament = require('../models/Tournament');
+const Tournament = require('../models/ConductTournament');
 const Twilio = require('twilio');
 require('dotenv').config();
 
@@ -49,6 +49,9 @@ const TournamentController = {
 
             // Respond with success message
             res.status(200).json({ message: 'Tournament conducted successfully!' });
+
+
+
         } catch (error) {
             // Handle errors
             console.error('Error conducting tournament:', error);
@@ -58,3 +61,5 @@ const TournamentController = {
 };
 
 module.exports = TournamentController;
+
+

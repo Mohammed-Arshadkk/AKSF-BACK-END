@@ -3,6 +3,6 @@ const router = express.Router();
 
 const { conductTournament } = require('../controllers/ConductTournament');
 
-router.post('/conduct', conductTournament);
+router.post('/conductTournament', conductTournament);
 
 module.exports = router;
