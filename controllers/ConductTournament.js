@@ -6,9 +6,10 @@ const cdSchema = require("../models/ConductTournament");
 
 const SID = process.env.TWILIO_ACCOUNT_SID;
 const AUTH = process.env.TWILIO_AUTH_TOKEN;
-const SERVICE = process.env.TWILIO_VERIFY_SERVICE_ID;
+const SERVICE = process.env.SERVICE_ID;
+console.log(SID,AUTH)
 
-const client = Twilio(SID, AUTH);
+const client = require("twilio")(SID, AUTH);
 
 // Function to check if password is strong
 const isPasswordStrong = (password) => {
@@ -67,15 +68,10 @@ const TournamentController = {
       await newTournament.save();
 
       // Send SMS notifications to participants
-      client.messages
-        .create({
-          body: `Your tournament registration is successful. Welcome to ${clubName}.`,
-          from: process.env.TWILIO_PHONE_NUMBER, // Your Twilio phone number
-          to: `+91${phoneNumber}`, // Participant's phone number
-        })
-        .then((message) => console.log(message.sid))
-        .catch((err) => console.error("Error sending SMS:", err));
-
+      await client.verify.v2
+        .services(SERVICE)
+        .verifications.create({ to: `+91${phoneNumber}`, channel: "sms" });
+      // res.status(200).json({message:'Otp send successfully'})
       res.status(200).json({ message: "Tournament conducted successfully!" });
     } catch (error) {
       console.error("Error conducting tournament:", error);
