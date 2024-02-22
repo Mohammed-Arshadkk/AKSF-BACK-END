@@ -20,6 +20,7 @@ const createToken = (id) => {
 };
 
 const UserObject = {
+  // Signup the user
   postSignUp: async (req, res) => {
     const {userName, email, password} = req.body;
     console.log(userName, email, password);
@@ -62,7 +63,7 @@ const UserObject = {
       res.status(400).json({error: 'user is already exists'});
     }
   },
-
+  // Login the user
   login: async (req, res) => {
     const {username, password} = req.body;
 
@@ -86,39 +87,37 @@ const UserObject = {
       res.status(500).json({error: 'there is no existing user'});
     }
   },
+  // send otp to the user mail
   sendotp: async (req, res) => {
     const {email} = req.body;
-    console.log(email);
 
     try {
-      const existingUsermail = await Users.findOne({email: email});
-      console.log(existingUsermail);
+      const existingUser = await Users.findOne({email});
 
-      if (existingUsermail) {
-        const OTP = await Math.floor(100000 + Math.random() * 900000);
-        console.log(`otp:${OTP}`);
-
+      if (existingUser) {
+        const OTP = Math.floor(100000 + Math.random() * 900000);
+        console.log('otp :', OTP);
         const mailOptions = {
           from: process.env.EMAIL,
           to: email,
           subject: 'OTP verification',
-          text: `OTP ${OTP}`,
+          text: `Your OTP: ${OTP}`,
         };
 
         transporter.sendMail(mailOptions, (error, info) => {
           if (error) {
-            console.log(error);
+            console.error(error); // Log the error for debugging
             res.status(500).json({error: 'Failed to send OTP'});
           } else {
-            console.log('Email sent:' + info.response);
-            res.status(200).json({message: 'OTP Sent Successfully'});
+            console.log('Email sent:', info.response);
+            res.status(200).json({message: 'OTP Sent Successfully', OTP});
           }
         });
       } else {
         res.status(400).json({error: 'User not found'});
       }
     } catch (err) {
-      console.log(err);
+      console.error(err); // Log the error for debugging
       res.status(500).json({error: 'Internal server error'});
     }
   },

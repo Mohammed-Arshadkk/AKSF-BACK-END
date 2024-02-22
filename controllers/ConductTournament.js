@@ -1,15 +1,9 @@
-const Tournament = require('../models/ConductTournament');
-const Twilio = require('twilio');
-require('dotenv').config();
+const express = require('express');
+const router = express.Router();
 const bcrypt = require('bcrypt');
+// eslint-disable-next-line max-len
+const Tournament = require('../models/ConductTournament'); // Assuming Tournament is the correct model
 const cdSchema = require('../models/ConductTournament');
-
-const SID = process.env.TWILIO_ACCOUNT_SID;
-const AUTH = process.env.TWILIO_AUTH_TOKEN;
-const SERVICE = process.env.SERVICE_ID;
-console.log(SID, AUTH);
-
-const client = require('twilio')(SID, AUTH);
 
 // Function to check if password is strong
 const isPasswordStrong = (password) => {
@@ -17,11 +11,43 @@ const isPasswordStrong = (password) => {
   return password.length >= 8 && SpecialCharacters.test(password);
 };
 
-const TournamentController = {
-  conductTournament: async (req, res) => {
-    const {
+// Conduct Tournament route
+router.post('/conduct-tournament', async (req, res) => {
+  const {
+    clubName,
+    password,
+    place,
+    phoneNumber,
+    startDate,
+    endDate,
+    secretaryName,
+    presidentName,
+    sponsorship,
+    winnersPrice,
+    runnersPrice,
+  } = req.body;
+
+  if (!isPasswordStrong(password)) {
+    return res.status(400).json({
+      // eslint-disable-next-line max-len
+      message: 'Password is not strong enough. Please use a password with at least 8 characters.',
+    });
+  }
+
+  try {
+    const existingTournament = await Tournament.findOne({clubName});
+    if (existingTournament) {
+      return res.status(400).json({
+        // eslint-disable-next-line max-len
+        message: 'A tournament with this club name already exists. Please choose a different club name.',
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newTournament = new Tournament({
       clubName,
-      password,
+      password: hashedPassword,
       place,
       phoneNumber,
       startDate,
@@ -31,81 +57,50 @@ const TournamentController = {
       sponsorship,
       winnersPrice,
       runnersPrice,
-    } = req.body;
+    });
 
-    if (!isPasswordStrong(password)) {
-      return res.status(400).json({
-        message:
-          // eslint-disable-next-line max-len
-          'Password is not strong enough.Please use a password with at least 8 characters.',
-      });
-    }
+    await newTournament.save();
 
-    try {
-      const existingTournament = await Tournament.findOne({clubName});
-      if (existingTournament) {
-        return res.status(400).json({
-          message:
-            // eslint-disable-next-line max-len
-            'A tournament with this club name already exists. Please choose a different club name.',
-        });
-      }
+    // Send request to admin
+    await sendAdminRequest(clubName);
 
-      const hashedPassword = await bcrypt.hash(password, 10);
+    res.status(200).json({message: 'Request sent to admin for approval'});
+  } catch (error) {
+    console.error('Error conducting tournament:', error);
+    res.status(500).json({
+      message: 'Failed to conduct tournament. Please try again later.',
+    });
+  }
+});
 
-      const newTournament = new Tournament({
-        clubName,
-        password: hashedPassword,
-        place,
-        phoneNumber,
-        startDate,
-        endDate,
-        secretaryName,
-        presidentName,
-        sponsorship,
-        winnersPrice,
-        runnersPrice,
-      });
+// Tournament login route
+router.post('/cd-login', async (req, res) => {
+  const {clubName, password} = req.body;
 
-      await newTournament.save();
+  try {
+    const checkCdTournament = await cdSchema.findOne({clubName});
 
-      // Send SMS notifications to participants
-      await client.verify.v2
-          .services(SERVICE)
-          .verifications.create({to: `+91${phoneNumber}`, channel: 'sms'});
-      // res.status(200).json({message:'Otp send successfully'})
-      res.status(200).json({message: 'Tournament conducted successfully!'});
-    } catch (error) {
-      console.error('Error conducting tournament:', error);
-      res.status(500).json({
-        message: 'Failed to conduct tournament. Please try again later.',
-      });
-    }
-  },
-  Cdlogin: async (req, res) => {
-    const {clubName, password} = req.body;
+    if (checkCdTournament) {
+      // eslint-disable-next-line max-len
+      const passwordCheck = bcrypt.compareSync(password, checkCdTournament.password);
 
-    try {
-      const checkCdTournament = await cdSchema.findOne({clubName});
-
-      if (checkCdTournament) {
-        const passwordCheck = bcrypt.compareSync(
-            password,
-            checkCdTournament.password,
-        );
-
-        if (!passwordCheck) {
-          res.status(400).json({message: 'Password does not match'});
-        } else {
-          res.status(200).json({message: 'Logged in successfully'});
-        }
+      if (!passwordCheck) {
+        res.status(400).json({message: 'Password does not match'});
       } else {
-        res.status(400).json({message: 'Clubname does not match'});
+        res.status(200).json({message: 'Logged in successfully'});
       }
-    } catch (err) {
-      res.status(500).json({message: 'Login error'});
+    } else {
+      res.status(400).json({message: 'Clubname does not match'});
     }
-  },
-};
+  } catch (err) {
+    res.status(500).json({message: 'Login error'});
+  }
+});
 
-module.exports = TournamentController;
+// Function to send admin request
+// eslint-disable-next-line require-jsdoc
+async function sendAdminRequest(clubName) {
+  console.log(`Request sent to admin for club: ${clubName}`);
+}
+
+module.exports = router;
