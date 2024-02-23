@@ -2,6 +2,7 @@ const Users = require('../models/userSchema');
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const otp = require('../models/OtpSchema');
 const nodemailer = require('nodemailer');
 
 // Creating transporter for nodemailer
@@ -96,6 +97,24 @@ const UserObject = {
 
       if (existingUser) {
         const OTP = Math.floor(100000 + Math.random() * 900000);
+
+        const existMail=await otp.findOne({email: email});
+        if (existMail) {
+          const updateOtp = await otp.findByIdAndUpdate(
+              {_id: existMail._id},
+              {userID: existingUser._id, otp: OTP},
+              {new: true},
+          );
+          await updateOtp.save();
+        } else {
+          const updateData = new otp({
+            userID: existingUser._id,
+            email: email,
+            otp: OTP,
+          });
+          await updateData.save();
+        }
+
         console.log('otp :', OTP);
         const mailOptions = {
           from: process.env.EMAIL,
