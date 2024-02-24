@@ -2,7 +2,8 @@
 const express = require('express');
 const router = express.Router();
 
-const {postSignUp, login, sendotp} = require('../controllers/userController');
+// eslint-disable-next-line max-len
+const {postSignUp, login, sendotp, otpVerification} = require('../controllers/userController');
 const TournamentController = require('../controllers/ConductTournament');
 // const AdminController = require('../controllers/AdminController');++
 
@@ -10,7 +11,7 @@ const TournamentController = require('../controllers/ConductTournament');
 router.post('/signup', postSignUp);
 router.post('/login', login);
 router.post('/sendotp', sendotp);
-
+router.post('/verify-otp', otpVerification);
 // Tournament routes
 router.post('/conduct-tournament', TournamentController);
 

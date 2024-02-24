@@ -2,7 +2,7 @@ const Users = require('../models/userSchema');
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
-const otp = require('../models/OtpSchema');
+const otpShema = require('../models/OtpSchema');
 const nodemailer = require('nodemailer');
 
 // Creating transporter for nodemailer
@@ -98,16 +98,16 @@ const UserObject = {
       if (existingUser) {
         const OTP = Math.floor(100000 + Math.random() * 900000);
 
-        const existMail=await otp.findOne({email: email});
+        const existMail=await otpShema.findOne({email: email});
         if (existMail) {
-          const updateOtp = await otp.findByIdAndUpdate(
+          const updateOtp = await otpShema.findByIdAndUpdate(
               {_id: existMail._id},
               {userID: existingUser._id, otp: OTP},
               {new: true},
           );
           await updateOtp.save();
         } else {
-          const updateData = new otp({
+          const updateData = new otpShema({
             userID: existingUser._id,
             email: email,
             otp: OTP,
@@ -140,6 +140,25 @@ const UserObject = {
       res.status(500).json({error: 'Internal server error'});
     }
   },
+  otpVerification: async (req, res) => {
+    try {
+      const {otp} = req.body;
+      console.log(otp);
+      // Ensure `otp` is the correct model for querying
+      const findUser = await otpShema.findOne({otp});
+
+      if (findUser) {
+        res.status(200).json({message: 'OTP is correct'});
+      } else {
+        // eslint-disable-next-line max-len
+        res.status(404).json({message: 'OTP is incorrect'}); // Changed status to 404 for not found
+      }
+    } catch (error) {
+      console.error('Error in OTP verification:', error);
+      res.status(500).json({message: 'Internal server error'});
+    }
+  },
 };
+
 
 module.exports = UserObject;
