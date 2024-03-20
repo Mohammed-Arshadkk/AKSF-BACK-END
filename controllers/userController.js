@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const otpShema = require('../models/OtpSchema');
 const nodemailer = require('nodemailer');
+const ConductTournament = require('../models/ConductTournament');
 
 // Creating transporter for nodemailer
 const transporter = nodemailer.createTransport({
@@ -16,6 +17,7 @@ const transporter = nodemailer.createTransport({
 
 maxAge = 3 * 24 * 60 * 60;
 
+// jwt token
 const createToken = (id) => {
   return jwt.sign({id}, process.env.ACCESS_TOKEN, {expiresIn: maxAge});
 };
@@ -98,7 +100,7 @@ const UserObject = {
       if (existingUser) {
         const OTP = Math.floor(100000 + Math.random() * 900000);
 
-        const existMail=await otpShema.findOne({email: email});
+        const existMail = await otpShema.findOne({email: email});
         if (existMail) {
           const updateOtp = await otpShema.findByIdAndUpdate(
               {_id: existMail._id},
@@ -107,6 +109,7 @@ const UserObject = {
           );
           await updateOtp.save();
         } else {
+          // eslint-disable-next-line new-cap
           const updateData = new otpShema({
             userID: existingUser._id,
             email: email,
@@ -158,7 +161,90 @@ const UserObject = {
       res.status(500).json({message: 'Internal server error'});
     }
   },
-};
+  resetPassword: async (req, res) => {
+    const decodedToken = req.decodedToken;
+    const userId = decodedToken.id;
+    console.log(`heloooo`, userId);
+    try {
+      const {newPassword} = req.body;
+      const user = await Users.findOne({_id: userId});
 
+      if (!user) {
+        return res.status(404).json({message: 'User not found'});
+      }
+
+      const hashedPass = await bcrypt.hashSync(
+          newPassword,
+          bcrypt.genSaltSync(10),
+      );
+      user.password = hashedPass;
+      await user.save();
+      res.status(200).json({message: 'Password reset successfully.'});
+    } catch (error) {
+      console.error('Error resetting password:', error);
+
+      res
+          .status(500)
+          .json({message: 'An error occurred while resetting the password.'});
+    }
+  },
+
+  conductTournament: async (req, res) => {
+    const {formData} = req.body;
+    console.log(formData);
+
+    const {
+      clubName,
+      password,
+      place,
+      phoneNumber,
+      startDate,
+      endDate,
+      secretaryName,
+      presidentName,
+      sponsorship,
+      winnersPrice,
+      runnersPrice,
+      verified,
+    } = formData;
+
+    const existingClub = await ConductTournament.findOne({
+      clubName: formData.clubName,
+    });
+
+    try {
+      if (existingClub) {
+        return res
+            .status(400)
+            .json({message: 'A club with name is already exist'});
+      }
+
+      const hashPassword = await bcrypt.hash(password, 10)
+
+      const newTournament = new ConductTournament({
+        clubName: clubName,
+        password: hashPassword,
+        place: place,
+        phoneNumber: phoneNumber,
+        startDate: startDate,
+        endDate: endDate,
+        secretaryName: secretaryName,
+        presidentName: presidentName,
+        sponsorship: sponsorship,
+        winnersPrice: winnersPrice,
+        runnersPrice: runnersPrice,
+        verified: verified,
+      });
+      await newTournament.save();
+
+      return res
+          .status(200)
+          .json({message: 'Tournament Conducted Successfully !..'});
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({message: 'Internal Server error'});
+    }
+  },
+};
 
 module.exports = UserObject;

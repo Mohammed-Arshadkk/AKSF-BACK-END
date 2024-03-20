@@ -1,18 +1,20 @@
-/* eslint-disable new-cap */
 const express = require('express');
 const router = express.Router();
+const otpVery = require('../middleware/otpVerfication');
+const {postSignUp, login,
+  sendotp, otpVerification, resetPassword, conductTournament} =
+ require('../controllers/userController');
 
-// eslint-disable-next-line max-len
-const {postSignUp, login, sendotp, otpVerification} = require('../controllers/userController');
-const TournamentController = require('../controllers/ConductTournament');
-// const AdminController = require('../controllers/AdminController');++
 
 // User routes
 router.post('/signup', postSignUp);
 router.post('/login', login);
 router.post('/sendotp', sendotp);
-router.post('/verify-otp', otpVerification);
+router.post('/otpVerification', otpVerification);
+router.post('/reset-password', otpVery, resetPassword);
+
 // Tournament routes
-router.post('/conduct-tournament', TournamentController);
+router.post('/conduct-tournament', conductTournament);
+
 
 module.exports = router;
