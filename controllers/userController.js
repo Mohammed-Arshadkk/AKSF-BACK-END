@@ -219,7 +219,7 @@ const UserObject = {
             .json({message: 'A club with name is already exist'});
       }
 
-      const hashPassword = await bcrypt.hash(password, 10)
+      const hashPassword = await bcrypt.hash(password, 10);
 
       const newTournament = new ConductTournament({
         clubName: clubName,
