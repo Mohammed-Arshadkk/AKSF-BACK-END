@@ -13,7 +13,7 @@ router.get('/approvedClubs', approvedClubs);
 // Route to verify a tournament by ID
 // router.put('/verifyTournament/:id', verifyTournament);
 // router.get('/verified', otpVery , verifiedOrNot);
-router.put('/approveRequests/:id', approveRequest);
+router.post('/approveRequests/:id', approveRequest);
 router.post('/rejectedClubs/:id', rejectRequest);
 
 module.exports = router;

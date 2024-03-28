@@ -41,6 +41,8 @@ const AdminController = {
 
   approveRequest: async (req, res) => {
     const requestId = req.params.id;
+    const {action} = req.body;
+    console.log(action, 'action is here ');
 
     try {
       const request = await Tournament.findById(requestId);
@@ -48,12 +50,20 @@ const AdminController = {
         return res.status(404).json({message: 'Join request not found'});
       }
 
-      request.verified = true;
-      await request.save();
+      if (action === 'approve') {
+        request.verified = true;
+        await request.save();
 
-      return res
-          .status(200)
-          .json({message: 'Join request approved successfully'});
+        return res
+            .status(200)
+            .json({message: 'Join request approved successfully'});
+      } else if (action === 'reject') {
+        request.verified = false;
+        await request.save();
+        return res
+            .status(200)
+            .json({message: 'Join request declined successfully'});
+      }
     } catch (error) {
       console.error('Error approving join request:', error);
       return res.status(500).json({message: 'Internal server error'});
