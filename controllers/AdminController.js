@@ -74,6 +74,21 @@ const AdminController = {
     }
   },
 
+  rejectRequest: async (req, res) => {
+    requestId = req.params.id;
+    try {
+      const request = await Tournament.findById(requestId);
+      if (!request) {
+        return res.status(404).json({message: 'Join request not found'});
+      }
+      res.status(200).json({message: 'Join request rejected success'});
+    } catch (error) {
+      console.error('Error rejecting join request :', error);
+      return res.status(500).json({message: 'Internal server error'});
+    }
+  },
+
+
   // verifiedOrNot: async (req, res) =>{
   //   console.log(req.decodedToken, 'decoded token is here');
   //   const id = req.decodedToken.id;

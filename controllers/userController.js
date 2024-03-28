@@ -245,6 +245,33 @@ const UserObject = {
       return res.status(500).json({message: 'Internal Server error'});
     }
   },
+
+  cdLogin: async (req, res) => {
+    const {clubName, password} = req.body;
+
+    try {
+      const existingUser = await ConductTournament
+          .findOne({clubName: clubName});
+      if (existingUser) {
+        const validPassword = bcrypt.compareSync(
+            password,
+            existingUser.password,
+        );
+
+        if (validPassword) {
+          res.status(200).json({message: 'Login success'});
+        } else {
+          res.status(400).json({message: 'Wrong Password'});
+        }
+      } else {
+        res.status(400).json({error: 'Invalid ClubName'});
+      }
+    } catch (err) {
+      res.status(500).json({error: 'there is no existing user'});
+    }
+  },
+
+
 };
 
 module.exports = UserObject;
